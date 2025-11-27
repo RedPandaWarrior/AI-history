@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "AI 提问历史助手",
+  "version": "1.0",
+  "description": "在 DeepSeek 页面右侧显示提问历史",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.deepseek.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*"
+        ],
+      "js": [
+        "js/platformConfig.js",
+        "js/button.js",
+        "js/message.js", 
+        "js/messageContainer.js", 
+        "js/panel.js",
+        "js/openPanelBtn.js",
+        "js/main.js"
+      ],
+      "css": ["css/panel.css"],
+      "run_at": "document_end"
+    }
+    
+  ]
+  
+  
+}
