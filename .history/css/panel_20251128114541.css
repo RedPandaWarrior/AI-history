@@ -12,20 +12,23 @@
     width: var(--open-panel-btn-width);
     height: var(--open-panel-btn-height);
     position: fixed;
-    background: rgb(176,193,255); 
+    background: rgb(8, 27, 44); 
     border-radius: 50%;
     z-index: 1001;
     transition: background 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 2px 4px rgba(0,0,0,0.06);
 }
-
+.open-panel-btn:hover {
+    background: rgb(209,227,255); /* 悬停柔和亮一点 */
+    box-shadow: 0 0 10px rgba(209,227,255,0.8);
+}
 .open-panel-btn-text {
     font-size: calc(var(--open-panel-btn-width) * 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    /* color: #334155; */
+    color: #334155;
 }
 
 /* 面板容器 */

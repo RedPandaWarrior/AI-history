@@ -122,9 +122,9 @@
 
         async updateMsgs(){
             const msgs = await this.panelInstance.getMsgs()
-            const msgCount = msgs.length;
-            
             this.msgConInstance.addMsgsToMsgCon(msgs);
+
+            const msgCount = msgs.length;
             this.msgCtrEle.textContent = `Total ${msgCount} messages`
         }
 
@@ -139,5 +139,9 @@
         }
     })
     initObs.observe(document.body, { childList: true, subtree: true });
-
+    
+    // window.addEventListener('DOMContentLoaded',()=>{
+    //     window.platformConfig.init();
+    //     userMsgPanel.init();
+    // })
 })();

@@ -2,7 +2,6 @@
     position: relative;
     font-family: "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     font-weight: 500; /* 🔥 字体更粗一些 */
-    font-size: 1.1em;
 }
 
 /* 打开面板按钮 */
@@ -12,20 +11,23 @@
     width: var(--open-panel-btn-width);
     height: var(--open-panel-btn-height);
     position: fixed;
-    background: rgb(176,193,255); 
+    background: rgb(235,242,248); /* 淡蓝灰 */
     border-radius: 50%;
     z-index: 1001;
     transition: background 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 2px 4px rgba(0,0,0,0.06);
 }
-
+.open-panel-btn:hover {
+    background: rgb(209,227,255); /* 悬停柔和亮一点 */
+    box-shadow: 0 0 10px rgba(209,227,255,0.8);
+}
 .open-panel-btn-text {
     font-size: calc(var(--open-panel-btn-width) * 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    /* color: #334155; */
+    color: #334155;
 }
 
 /* 面板容器 */
@@ -34,9 +36,9 @@
     width: var(--panel-width);
     height: calc(var(--panel-width) * 1.2);
     position: fixed;
-    background-color: rgb(253,250,245); /* 🔥 面板背景，比 249 更亮一点 */
+    background-color: rgb(255,255,255); /* 🔥 面板背景，比 249 更亮一点 */
     border-radius: 16px;
-    border: 1px solid rgb(175,192,254); /* 淡蓝灰 */
+    border: 1px solid rgb(235,242,248); /* 淡蓝灰 */
     overflow: hidden;
     padding: 15px 10px;
     display: flex;
@@ -77,8 +79,8 @@
 /* 消息块 */
 .user-message {
     max-height: calc(1.2em * 4);
-    background-color: rgb(200, 219, 255); /* 🔥 你指定的天蓝色（淡） */
-    border: 1px solid rgb(215,226,255);
+    background-color: rgb(175,192,254); /* 🔥 你指定的天蓝色（淡） */
+    border: 1px solid rgb(222,232,247);
     border-radius: 12px;
     margin-bottom: 15px;
     padding: 8px 12px;
@@ -152,4 +154,3 @@
     align-items: center;
     justify-content: center;
 }
-

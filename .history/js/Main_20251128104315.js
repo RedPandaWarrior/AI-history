@@ -12,9 +12,16 @@
 
         async init(){
             
+            window.platformConfig.init();
             this.createDOMStructure();
             this.passReferences();
-            this.updateMsgs();
+            
+            const msgs = await this.panelInstance.getMsgs()
+            this.msgConInstance.addMsgsToMsgCon(msgs);
+
+            const msgCount = msgs.length;
+            this.msgCtrEle.textContent = `Total ${msgCount} messages`
+            
             this.observeAndUpdateMessages(); // mutation只会监听新增的变化，打开网页时无法监听
             
 
@@ -83,29 +90,21 @@
                     window.platformConfig.curURL = window.location.href                  
                 }
 
-                if (containNewMsgs(mutations)){
-                    this.updateMsgs();
+                if (containsNewMsgs(mutations)){
+                    const msgs = await this.panelInstance.getMsgs()
+                    this.msgConInstance.addMsgsToMsgCon(msgs);
+
+                    const msgCount = msgs.length;
+                    this.msgCtrEle.textContent = `Total ${msgCount} messages`
                 }
             });
-            
-            const panelObs = new MutationObserver(()=>{
-                if (this.panelInstance.panelEle.classList.contains('collapsed')){
-                    bodyObs.disconnect()
-                } else {
-                    this.updateMsgs();
-                    bodyObs.observe(document.body, { // 为了切换对话也能同步更新面板消息所以监控body
-                        childList: true, 
-                        subtree: true, 
-                    });
-                }
-            })
 
-            panelObs.observe(this.panelInstance.panelEle,{
-                attributes: true,
-                attributeFilter: ['class'],
-            })
+            // bodyObs.observe(document.body, { // 为了切换对话也能同步更新面板消息所以监控body
+            //     childList: true, 
+            //     subtree: true, 
+            // });
             
-            function containNewMsgs(mutations) {
+            function containsNewMsgs(mutations) {
                 for (const mutation of mutations){
                     for (const newNode of mutation.addedNodes){
                         const msgNode = newNode.querySelector?.(window.platformConfig.origMsgSl)
@@ -117,16 +116,19 @@
                 return false;          
             };
 
-            
-        },
+            const panelObs = new MutationObserver(
+                if (!this.panelInstance.panelEle.classList.contains('collapsed')){
+                    bodyObs.disconnect()
+                } else {
+                    bodyObs.observe(document.body, { // 为了切换对话也能同步更新面板消息所以监控body
+                        childList: true, 
+                        subtree: true, 
+                    });
+                }
+            )
 
-        async updateMsgs(){
-            const msgs = await this.panelInstance.getMsgs()
-            const msgCount = msgs.length;
-            
-            this.msgConInstance.addMsgsToMsgCon(msgs);
-            this.msgCtrEle.textContent = `Total ${msgCount} messages`
-        }
+            panelObs.observe(this.panelInstance.panelEle)
+        },
 
     }
 
@@ -139,5 +141,9 @@
         }
     })
     initObs.observe(document.body, { childList: true, subtree: true });
-
+    
+    // window.addEventListener('DOMContentLoaded',()=>{
+    //     window.platformConfig.init();
+    //     userMsgPanel.init();
+    // })
 })();

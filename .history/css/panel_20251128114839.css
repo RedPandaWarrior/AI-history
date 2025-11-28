@@ -12,7 +12,7 @@
     width: var(--open-panel-btn-width);
     height: var(--open-panel-btn-height);
     position: fixed;
-    background: rgb(176,193,255); 
+    background: rgb(57,100,254); 
     border-radius: 50%;
     z-index: 1001;
     transition: background 0.2s ease, box-shadow 0.2s ease;

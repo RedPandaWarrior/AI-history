@@ -83,7 +83,7 @@
                     window.platformConfig.curURL = window.location.href                  
                 }
 
-                if (containNewMsgs(mutations)){
+                if (containsNewMsgs(mutations)){
                     this.updateMsgs();
                 }
             });
@@ -99,13 +99,13 @@
                     });
                 }
             })
-
+            
             panelObs.observe(this.panelInstance.panelEle,{
                 attributes: true,
                 attributeFilter: ['class'],
             })
             
-            function containNewMsgs(mutations) {
+            function containsNewMsgs(mutations) {
                 for (const mutation of mutations){
                     for (const newNode of mutation.addedNodes){
                         const msgNode = newNode.querySelector?.(window.platformConfig.origMsgSl)
@@ -122,9 +122,9 @@
 
         async updateMsgs(){
             const msgs = await this.panelInstance.getMsgs()
-            const msgCount = msgs.length;
-            
             this.msgConInstance.addMsgsToMsgCon(msgs);
+
+            const msgCount = msgs.length;
             this.msgCtrEle.textContent = `Total ${msgCount} messages`
         }
 
@@ -139,5 +139,9 @@
         }
     })
     initObs.observe(document.body, { childList: true, subtree: true });
-
+    
+    // window.addEventListener('DOMContentLoaded',()=>{
+    //     window.platformConfig.init();
+    //     userMsgPanel.init();
+    // })
 })();

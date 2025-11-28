@@ -139,5 +139,9 @@
         }
     })
     initObs.observe(document.body, { childList: true, subtree: true });
-
+    
+    // window.addEventListener('DOMContentLoaded',()=>{
+    //     window.platformConfig.init();
+    //     userMsgPanel.init();
+    // })
 })();

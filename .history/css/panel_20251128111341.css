@@ -1,0 +1,87 @@
+.AI-question-history-ext-root {
+    position: relative;
+    font-family: "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-weight: 500; /* 整体字体稍粗 */
+}
+
+/* 打开面板按钮 */
+.open-panel-btn {
+    background: #cddbf5;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.open-panel-btn:hover {
+    background: #b7ccf0;
+    box-shadow: 0 0 10px #b7ccf0;
+}
+.open-panel-btn-text {
+    font-size: calc(var(--open-panel-btn-width) * 0.5);
+    color: #3b3b3b;
+    font-weight: 600; /* 按钮稍微更粗一些 */
+}
+
+/* 面板区域 */
+.user-message-panel {
+    background-color: rgb(252,252,252); /* 更浅的灰白色 */
+    border: 2px solid #e4e9f2;
+    color: #3b3b3b;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* 消息计数 */
+.message-counter {
+    color: #666;
+    font-weight: 500;
+}
+
+/* 消息区域滚动条 */
+.user-message-container::-webkit-scrollbar-thumb {
+    background: #dbe5f7;
+}
+
+/* 用户消息 */
+.user-message {
+    background-color: rgb(237,243,254); /* 你要求的淡天蓝 */
+    border: 1px solid #d5e3fa;
+    color: #3b3b3b;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+/* 展开按钮 */
+.message-expand-btn {
+    background: #cddbf5;
+    border: 1px solid #b7ccf0;
+    color: #3b3b3b;
+    font-weight: 600;
+}
+.message-expand-btn:hover {
+    background: #b7ccf0;
+    color: black;
+}
+
+/* 侧边按钮容器 */
+.scroll-btn-container {
+    background-color: rgba(255,255,255,0.85);
+    border: 1px solid #e4e9f2;
+}
+
+/* 滚动按钮 */
+.scroll-to-top-btn,
+.scroll-to-down-btn {
+    background: #cddbf5;
+    border: 1px solid #b7ccf0;
+    color: #3b3b3b;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+.scroll-to-top-btn:hover,
+.scroll-to-down-btn:hover {
+    background: #b7ccf0;
+    color: black;
+}
+
+.scroll-btn-text {
+    font-size: 18px;
+}
