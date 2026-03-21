@@ -1,0 +1,171 @@
+:host {
+    font-family: "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+
+    --panel-btn-left: calc(100vw - 80px);
+    --panel-btn-top: calc(100vh - 90px);
+    --panel-btn-width: 40px;
+    --panel-btn-height: 40px;
+    --panel-width: 300px;
+    --panel-height: 420px;
+    --panel-gap: 8px;
+}
+
+.panel-btn {
+    position: fixed;
+    width: var(--panel-btn-width);
+    height: var(--panel-btn-height);
+    left: var(--panel-btn-left);
+    top: var(--panel-btn-top);
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    z-index: 1001;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: box-shadow 0.2s ease, background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.panel-btn:hover {
+    background: #f5f5f5;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.panel {
+    position: fixed;
+    left: var(--panel-btn-left);
+    top: calc(var(--panel-btn-top) - var(--panel-height) - var(--panel-gap));
+    width: var(--panel-width);
+    height: var(--panel-height);
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: visible;
+}
+.panel.collapsed {
+    display: none;
+}
+
+.panel-header {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #999;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 12px 12px 0 0;
+}
+
+.message-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #e8e8e8 transparent;
+    border-radius: 0 0 12px 12px;
+}
+.message-container::-webkit-scrollbar {
+    width: 4px;
+}
+.message-container::-webkit-scrollbar-thumb {
+    background: #e8e8e8;
+    border-radius: 4px;
+}
+
+.message {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 6px;
+    margin: 1px 6px;
+    cursor: pointer;
+    color: #333;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.message::before {
+    content: '💬';
+    font-size: 12px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    opacity: 0.4;
+    transition: opacity 0.15s ease;
+}
+.message:hover {
+    background: #f5f5f5;
+}
+.message.active {
+    background: #f0f7ff;
+    color: #1a6dcc;
+    font-weight: 500;
+}
+.message.active::before {
+    opacity: 1;
+}
+
+.scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* 条纹 */
+.scroll-to-bottom-btn::before {
+    position: absolute;
+    bottom: 4px;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #1a6dcc, transparent);
+    border-radius: 0 0 12px 12px;
+    transition: height 0.2s ease;
+}
+
+.scroll-to-bottom-btn::after {
+    position: absolute;
+    bottom: 4px;
+    font-size: 16px;
+    line-height: 1;
+    color: #1a6dcc;
+    font-weight: 300;
+}
+
+.scroll-to-bottom-btn:hover::before {
+    height: 8px;
+}
+
+.scroll-to-bottom-btn.visible {
+    opacity: 0.7;
+}
+
+.scroll-to-bottom-btn:hover {
+    opacity: 1 !important;
+}

@@ -1,0 +1,155 @@
+.AI-question-history-ext-root {
+    position: relative;
+    font-family: "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-weight: 500; /* 🔥 字体更粗一些 */
+    font-size: 1.1em;
+}
+
+/* 打开面板按钮 */
+.open-panel-btn {
+    --open-panel-btn-width: 50px;
+    --open-panel-btn-height: 50px;
+    width: var(--open-panel-btn-width);
+    height: var(--open-panel-btn-height);
+    position: fixed;
+    background: rgb(176,193,255); 
+    border-radius: 50%;
+    z-index: 1001;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.open-panel-btn-text {
+    font-size: calc(var(--open-panel-btn-width) * 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    /* color: #334155; */
+}
+
+/* 面板容器 */
+.user-message-panel {
+    --panel-width: 500px;
+    width: var(--panel-width);
+    height: calc(var(--panel-width) * 1.2);
+    position: fixed;
+    background-color: rgb(253,250,245); /* 🔥 面板背景，比 249 更亮一点 */
+    border-radius: 16px;
+    border: 1px solid rgb(175,192,254); /* 淡蓝灰 */
+    overflow: hidden;
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    color: #334155;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+}
+.user-message-panel.collapsed {
+    display: none;
+}
+
+/* 消息计数 */
+.message-counter {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #475569;
+}
+
+/* 消息滚动区域 */
+.user-message-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 5px 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(235,242,248) rgb(252,252,252);
+}
+.user-message-container::-webkit-scrollbar {
+    width: 6px;
+}
+.user-message-container::-webkit-scrollbar-thumb {
+    background: rgb(235,242,248);
+    border-radius: 4px;
+}
+
+/* 消息块 */
+.user-message {
+    max-height: calc(1.2em * 4);
+    background-color: rgb(200, 219, 255); /* 🔥 你指定的天蓝色（淡） */
+    border: 1px solid rgb(215,226,255);
+    border-radius: 12px;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    font-size: 90%;
+    position: relative;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    line-clamp: 4;
+    color: #334155;
+}
+.user-message.expanded {
+    max-height: none;
+    line-clamp: unset;
+}
+
+/* 展开按钮 */
+.message-expand-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    background: rgb(235,242,248);
+    border: 1px solid rgb(209,227,255);
+    color: #334155;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 6px;
+    transition: background 0.2s ease;
+}
+.message-expand-btn:hover {
+    background: rgb(209,227,255);
+    color: white;
+}
+
+/* 侧边滚动按钮区域 */
+.scroll-btn-container {
+    position: absolute;
+    bottom: 50%;
+    transform: translate(0, 50%);
+    left: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background-color: rgba(255,255,255,0.8);
+    border: 1px solid rgb(235,242,248);
+    padding: 4px;
+    border-radius: 6px;
+}
+
+/* 滚动按钮 */
+.scroll-to-top-btn,
+.scroll-to-down-btn {
+    background: rgb(235,242,248);
+    border: 1px solid rgb(209,227,255);
+    color: #334155;
+    border-radius: 6px;
+    height: 24px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.scroll-to-top-btn:hover,
+.scroll-to-down-btn:hover {
+    background: rgb(209,227,255);
+    color: white;
+}
+
+.scroll-btn-text {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
