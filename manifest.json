@@ -6,21 +6,16 @@
   "permissions": ["storage"],
   "content_scripts": [
     {
-      "matches": [
-        "https://chatgpt.com/*",
-        "https://claude.ai/*"
-      ],
+      "matches": ["https://chatgpt.com/*", "https://claude.ai/*"],
       "js": ["content.js"],
+      "css": ["content.css"],
       "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     {
       "resources": ["content.css"],
-      "matches": [
-        "https://chatgpt.com/*",
-        "https://claude.ai/*"
-      ]
+      "matches": ["https://chatgpt.com/*", "https://claude.ai/*"]
     }
   ]
 }
