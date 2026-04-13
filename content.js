@@ -21,9 +21,8 @@
         }
     }
 
-    // 📌 按钮相对于 AI 消息右上角的偏移
-    const PIN_BTN_OFFSET_TOP   = 0;   // 距消息顶部 px
-    const PIN_BTN_OFFSET_RIGHT = 0;  // 距消息右边 px
+    const PIN_BTN_OFFSET_TOP   = 8;
+    const PIN_BTN_OFFSET_RIGHT = 60;
 
     const ext = {
         root: null,
@@ -52,17 +51,14 @@
             this.listenConvsationChange();
         },
 
-        // ─── 固定面板 ────────────────────────────────────────────────────────────
-
         createPinnedPane(){
             const style = document.createElement('style');
             style.textContent = `
                 .ext-pinned-pane {
                     position: fixed;
-                    top: 0; left: 0; right: 0;
+                    top: 0;
                     z-index: 999998;
-                    background: Canvas;
-                    color: CanvasText;
+                    background: #ebebeb;
                     border-bottom: 2px solid #378ADD;
                     height: 240px;
                     min-height: 60px;
@@ -77,7 +73,7 @@
                     align-items: center;
                     justify-content: center;
                     padding: 5px 16px;
-                    border-bottom: 0.5px solid #e8e8e8;
+                    border-bottom: 0.5px solid #d8d8d8;
                     flex-shrink: 0;
                     position: relative;
                 }
@@ -101,11 +97,14 @@
                 .ext-pinned-pane__content {
                     flex: 1;
                     overflow-y: auto;
-                    padding: 12px 16px;
+                    padding: 10px 16px;
                     max-width: 48rem;
-                    margin: 0 auto;
-                    width: 100%;
+                    margin: 10px auto;
+                    width: calc(100% - 32px);
                     box-sizing: border-box;
+                    background: #fafafa;
+                    border: 0.5px solid #e8e8e8;
+                    border-radius: 10px;
                 }
                 .ext-pinned-pane__resize {
                     flex-shrink: 0;
@@ -182,6 +181,15 @@
             document.body.appendChild(this.pinnedPane);
 
             window.addEventListener('scroll', () => this.updateAllPinBtnPositions(), true);
+            window.addEventListener('resize', () => this.updatePinnedPanePosition());
+        },
+
+        updatePinnedPanePosition(){
+            const con = document.querySelector(this.platform[selector.msgCon]);
+            if (!con) return;
+            const rect = con.getBoundingClientRect();
+            this.pinnedPane.style.left  = rect.left + 'px';
+            this.pinnedPane.style.right = (window.innerWidth - rect.right) + 'px';
         },
 
         initResizeBar(bar){
@@ -239,18 +247,16 @@
 
         updateAllPinBtnPositions(){
             if (!this.pageMsgCon) return;
-
             const paneHeight = this.pinnedPane.classList.contains('hidden')
                 ? 0
                 : this.pinnedPane.getBoundingClientRect().height;
 
-            // 动态获取底部输入框的上边界
             const inputBar = document.querySelector(this.platform[selector.msgCon])
                 ?.parentElement
                 ?.querySelector('[class*="sticky"][class*="bottom"]');
             const bottomBoundary = inputBar
                 ? inputBar.getBoundingClientRect().top
-                : window.innerHeight - 80; // 兜底估算
+                : window.innerHeight - 80;
 
             const aiMsgs = this.pageMsgCon.querySelectorAll(this.platform[selector.aiMsg]);
             aiMsgs.forEach(node => {
@@ -260,10 +266,24 @@
                 const top = rect.top + PIN_BTN_OFFSET_TOP;
                 btn.style.top   = top + 'px';
                 btn.style.right = (window.innerWidth - rect.right + PIN_BTN_OFFSET_RIGHT) + 'px';
-                // 超出顶部面板或底部输入框范围时隐藏
                 btn.style.visibility = (top < paneHeight || top > bottomBoundary)
                     ? 'hidden'
                     : 'visible';
+            });
+        },
+
+        cleanOrphanPinBtns(){
+            // 获取所有pinBtn和现有ai消息的pinBtn，通过对比删除多余的遗留pinBtn
+            const liveBtns = new Set(
+                [...this.pageMsgCon.querySelectorAll(this.platform[selector.aiMsg])]
+                    .map(n => n._pinBtn)
+                    .filter(Boolean)
+            );
+            document.querySelectorAll('.ext-pin-btn').forEach(btn => {
+                if (!liveBtns.has(btn)) {
+                    if (this.activePinBtn === btn) this.unpinAiMessage();
+                    btn.remove();
+                }
             });
         },
 
@@ -306,14 +326,13 @@
             this.pinnedContentEl.innerHTML = '';
         },
 
-        // ─── 原有逻辑 ────────────────────────────────────────────────────────────
-
         async initPageMsgConObs(){
             this.pageMsgConObs?.disconnect();
             this.panelMsgCon.innerHTML = '';
             this.pageMsgCon = await this.getPageMsgCon();
+            this.updatePinnedPanePosition();
 
-            this.pageMsgConObs = new MutationObserver((mutations) => {
+            this.pageMsgConObs = new MutationObserver((mutations) => { 
                 mutations.forEach(mutation => {
                     mutation.addedNodes.forEach(node => {
                         if (node.nodeType !== 1) return;
@@ -323,7 +342,10 @@
                             const msgs = this.pageMsgCon.querySelectorAll(this.platform[selector.userMsg]);
                             if (msgs?.length > 0) {
                                 this.panelMsgCon.innerHTML = '';
-                                this.addNodesToPanel(msgs);
+                                this.addNodesToPanel(msgs); // 面对新增和编辑消息最简洁的方法就是重新获取所有消息节点
+                                // pinBtn是挂载body上而不是ai消息上的，所以需要清理因为编辑消息遗留的pinBtn
+                                // claude是先添加节点再删除旧节点，根据函数逻辑需要等删除旧节点之后执行
+                                setTimeout(() => this.cleanOrphanPinBtns(), 500) 
                             }
                         }
 
