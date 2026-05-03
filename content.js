@@ -1,10 +1,11 @@
 (function(){
-
+    
     const selector = {
         msgCon: 'msgCon',
         userMsg: 'userMsg',
         aiMsg: 'aiMsg',
-        title: 'title'
+        title: 'title',
+        header: 'header',
     }
     const platforms = {
         "chatgpt.com": {
@@ -12,362 +13,244 @@
             [selector.userMsg]: 'div[data-message-author-role="user"]',
             [selector.aiMsg]:   'div[data-message-author-role="assistant"]',
             [selector.title]:   'head > title',
+            [selector.header]: 'header',
         },
         "claude.ai": {
             [selector.msgCon]:  'div[data-autoscroll-container="true"]',
             [selector.userMsg]: 'div[data-testid="user-message"]',
-            [selector.aiMsg]:   'div.contents',
+            // [selector.aiMsg]:   'div.font-claude-response',
+            [selector.aiMsg]:   'div[data-is-streaming]',
             [selector.title]:   'head > title',
+            [selector.header]: '#main-content header',
         }
     }
 
-    const PIN_BTN_OFFSET_TOP   = 8;
-    const PIN_BTN_OFFSET_RIGHT = 60;
-
     const ext = {
         root: null,
+
         panel: null,
         panelBtn: null,
         panelMsgCon: null,
 
-        pageMsgConObs: null,
-        platform: null,
-        pageMsgCon: null,
-
         pinnedPane: null,
         pinnedContentEl: null,
-        pinnedNode: null,
+        pinnedNode: null, // 流式输出时监听目标节点同步变化
         pinnedObserver: null,
         activePinBtn: null,
+        
+        platform: null,
+        pageMsgCon: null,
+        pageMsgConObs: null,
+        pageMsgConResizeObs: null,
+        
 
-        init(){
+        
+        async init(){
             const p = Object.keys(platforms)
                             .find(p => window.location.hostname.includes(p))
             this.platform = platforms[p]
+            
+            this.creatPanel();
 
             this.createPinnedPane();
-            this.creatPanel();
-            this.initPageMsgConObs();
+            
+            this.setPageObservers();
             this.listenConvsationChange();
         },
-
+// ------------------固定面板逻辑------------------
         createPinnedPane(){
-            const style = document.createElement('style');
-            style.textContent = `
-                .ext-pinned-pane {
-                    position: fixed;
-                    top: 0;
-                    z-index: 999998;
-                    background: #ebebeb;
-                    border-bottom: 2px solid #378ADD;
-                    height: 240px;
-                    min-height: 60px;
-                    max-height: 90vh;
-                    display: flex;
-                    flex-direction: column;
-                    box-shadow: 0 2px 16px rgba(0,0,0,0.12);
-                }
-                .ext-pinned-pane.hidden { display: none; }
-                .ext-pinned-pane__header {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 5px 16px;
-                    border-bottom: 0.5px solid #d8d8d8;
-                    flex-shrink: 0;
-                    position: relative;
-                }
-                .ext-pinned-pane__title {
-                    font-size: 12px;
-                    font-weight: 500;
-                    color: #378ADD;
-                }
-                .ext-pinned-pane__unpin {
-                    position: absolute;
-                    right: 12px;
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    color: #aaa;
-                    font-size: 16px;
-                    padding: 0;
-                    line-height: 1;
-                }
-                .ext-pinned-pane__unpin:hover { color: #333; }
-                .ext-pinned-pane__content {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 10px 16px;
-                    max-width: 48rem;
-                    margin: 10px auto;
-                    width: calc(100% - 32px);
-                    box-sizing: border-box;
-                    background: #fafafa;
-                    border: 0.5px solid #e8e8e8;
-                    border-radius: 10px;
-                }
-                .ext-pinned-pane__resize {
-                    flex-shrink: 0;
-                    height: 6px;
-                    cursor: ns-resize;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: transparent;
-                    transition: background 0.15s;
-                }
-                .ext-pinned-pane__resize:hover {
-                    background: rgba(55, 138, 221, 0.12);
-                }
-                .ext-pinned-pane__resize::after {
-                    content: '';
-                    width: 40px;
-                    height: 3px;
-                    border-radius: 2px;
-                    background: #d0d0d0;
-                    transition: background 0.15s;
-                }
-                .ext-pinned-pane__resize:hover::after {
-                    background: #378ADD;
-                }
-                .ext-pin-btn {
-                    position: fixed;
-                    background: #fff;
-                    border: 1px solid #e8e8e8;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 13px;
-                    padding: 2px 6px;
-                    opacity: 1;
-                    z-index: 999997;
-                    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-                    line-height: 1.4;
-                }
-                .ext-pin-btn.active {
-                    background: #E6F1FB;
-                    border-color: #378ADD;
-                }
-            `;
-            document.documentElement.appendChild(style);
 
             this.pinnedPane = document.createElement('div');
-            this.pinnedPane.className = 'ext-pinned-pane hidden';
+            this.pinnedPane.className = 'pinned-pane';
+            this.pinnedPane.classList.add('hidden'); // 初始隐藏
 
             const header = document.createElement('div');
-            header.className = 'ext-pinned-pane__header';
-
-            const title = document.createElement('div');
-            title.className = 'ext-pinned-pane__title';
+            header.className = 'pinned-pane-header';
+            
+            const title = document.createElement('span');
             title.textContent = '📌 固定的回答';
-
-            const unpinBtn = document.createElement('button');
-            unpinBtn.className = 'ext-pinned-pane__unpin';
-            unpinBtn.textContent = '✕';
-            unpinBtn.title = '取消固定';
-            unpinBtn.addEventListener('click', () => this.unpinAiMessage());
-
+            
+            const closePaneBtn = document.createElement('button');
+            closePaneBtn.textContent = '✕';
+            closePaneBtn.addEventListener('click', ()=>this.unpinAiMessage(this.activePinBtn));
+            
             this.pinnedContentEl = document.createElement('div');
-            this.pinnedContentEl.className = 'ext-pinned-pane__content';
-
+            this.pinnedContentEl.className = 'pinned-content';
+   
             const resizeBar = document.createElement('div');
-            resizeBar.className = 'ext-pinned-pane__resize';
-            this.initResizeBar(resizeBar);
+            resizeBar.textContent = '——————'
+            resizeBar.className = 'pinned-pane-resize-bar';
+            this.resizePinnedPane(resizeBar);
 
             header.appendChild(title);
-            header.appendChild(unpinBtn);
+            header.appendChild(closePaneBtn);
             this.pinnedPane.appendChild(header);
             this.pinnedPane.appendChild(this.pinnedContentEl);
             this.pinnedPane.appendChild(resizeBar);
-            document.body.appendChild(this.pinnedPane);
-
-            window.addEventListener('scroll', () => this.updateAllPinBtnPositions(), true);
-            window.addEventListener('resize', () => this.updatePinnedPanePosition());
+            
         },
 
-        updatePinnedPanePosition(){
-            const con = document.querySelector(this.platform[selector.msgCon]);
-            if (!con) return;
-            const rect = con.getBoundingClientRect();
-            this.pinnedPane.style.left  = rect.left + 'px';
-            this.pinnedPane.style.right = (window.innerWidth - rect.right) + 'px';
-        },
-
-        initResizeBar(bar){
-            let startY, startH;
-
-            bar.addEventListener('mousedown', (e) => {
+        resizePinnedPane(resizeBar){
+            resizeBar.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                startY = e.clientY;
-                startH = this.pinnedPane.getBoundingClientRect().height;
+                document.body.style.cursor = 'grabbing';
+                const startX = e.clientX;
+                const startWidth = this.pinnedPane.getBoundingClientRect().width;
 
                 const onMove = (e) => {
-                    const newH = Math.min(
-                        window.innerHeight * 0.9,
-                        Math.max(60, startH + e.clientY - startY)
+                    const newWidth = Math.min(
+                        window.innerWidth * 0.6,
+                        Math.max(60, startWidth + (e.clientX - startX))
                     );
-                    this.pinnedPane.style.height = newH + 'px';
-                };
-                const onUp = () => {
+                    if (this.pinnedPane){
+                        this.pinnedPane.style.width =  newWidth + 'px';
+                        this.shiftPageMsgCon(newWidth);
+                    }
+                }
+                const onUp = (e) => {
+                    document.body.style.cursor = '';
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
-                };
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', onUp);
-            });
-        },
-
-        addPinBtnsToAiMsgs(){
-            if (!this.pageMsgCon) return;
-            const aiMsgs = this.pageMsgCon.querySelectorAll(this.platform[selector.aiMsg]);
-            aiMsgs.forEach(node => {
-                if (node.dataset.extAiMsg) return;
-                node.dataset.extAiMsg = true;
-
-                const btn = document.createElement('button');
-                btn.className = 'ext-pin-btn';
-                btn.textContent = '📌';
-                btn.title = '固定这条回答';
-
-                node._pinBtn = btn;
-
-                const rect = node.parentElement.getBoundingClientRect();
-                btn.style.top   = (rect.top + PIN_BTN_OFFSET_TOP) + 'px';
-                btn.style.right = (window.innerWidth - rect.right + PIN_BTN_OFFSET_RIGHT) + 'px';
-
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.pinnedNode === node
-                        ? this.unpinAiMessage()
-                        : this.pinAiMessage(node, btn);
-                });
-
-                document.body.appendChild(btn);
-            });
-        },
-
-        updateAllPinBtnPositions(){
-            if (!this.pageMsgCon) return;
-            const paneHeight = this.pinnedPane.classList.contains('hidden')
-                ? 0
-                : this.pinnedPane.getBoundingClientRect().height;
-
-            const inputBar = document.querySelector(this.platform[selector.msgCon])
-                ?.parentElement
-                ?.querySelector('[class*="sticky"][class*="bottom"]');
-            const bottomBoundary = inputBar
-                ? inputBar.getBoundingClientRect().top
-                : window.innerHeight - 80;
-
-            const aiMsgs = this.pageMsgCon.querySelectorAll(this.platform[selector.aiMsg]);
-            aiMsgs.forEach(node => {
-                const btn = node._pinBtn;
-                if (!btn) return;
-                const rect = node.parentElement.getBoundingClientRect();
-                const top = rect.top + PIN_BTN_OFFSET_TOP;
-                btn.style.top   = top + 'px';
-                btn.style.right = (window.innerWidth - rect.right + PIN_BTN_OFFSET_RIGHT) + 'px';
-                btn.style.visibility = (top < paneHeight || top > bottomBoundary)
-                    ? 'hidden'
-                    : 'visible';
-            });
-        },
-
-        cleanOrphanPinBtns(){
-            // 获取所有pinBtn和现有ai消息的pinBtn，通过对比删除多余的遗留pinBtn
-            const liveBtns = new Set(
-                [...this.pageMsgCon.querySelectorAll(this.platform[selector.aiMsg])]
-                    .map(n => n._pinBtn)
-                    .filter(Boolean)
-            );
-            document.querySelectorAll('.ext-pin-btn').forEach(btn => {
-                if (!liveBtns.has(btn)) {
-                    if (this.activePinBtn === btn) this.unpinAiMessage();
-                    btn.remove();
                 }
-            });
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp)
+            })
+            
         },
 
-        pinAiMessage(node, btn){
-            if (this.activePinBtn) {
-                this.activePinBtn.classList.remove('active');
-                this.activePinBtn.title = '固定这条回答';
+        shiftPageMsgCon(width){
+            if (!this.pageMsgCon) return;
+            this.pageMsgCon.style.transition = 'padding-left 0.3s ease';
+            this.pageMsgCon.style.paddingLeft = (width === 0 ? '' : width + 'px');
+        },
+
+        setPinnedPanePosition(pageMsgCon){
+            if (!pageMsgCon || !this.pinnedPane) return
+            const pageheader = document.querySelector(this.platform[selector.header]);
+            const pageHeaderHeight = pageheader?.getBoundingClientRect().height || 0;
+            this.pinnedPane.style.top = pageHeaderHeight + 'px'
+            
+            const rect = pageMsgCon.getBoundingClientRect()
+            this.pinnedPane.style.left = rect.left + 'px';
+            
+        },
+
+        addPinBtnOnAiMsg(node){
+            if (node.dataset.extAiMsg) return;
+            node.dataset.extAiMsg = true;
+            const btn = document.createElement('button');
+            btn.textContent = '📌';
+            btn.className = 'aiMsg-btn';
+
+            btn.addEventListener('click',()=>{
+                btn.classList.contains('active')
+                    ? this.unpinAiMessage(btn)
+                    : this.pinAiMessage(node, btn);
+            })
+            node.appendChild(btn)
+        },
+
+        unpinAiMessage(btn){
+            if (!btn) return;
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                this.pinnedPane.classList.add('hidden');
+                this.pinnedObserver?.disconnect();
+                this.pinnedNode = null;
+                this.pinnedObserver = null;
+                this.shiftPageMsgCon(0);
             }
+        },
+
+        pinAiMessage(node,btn){
+            if (!btn || !node) return;
+            if (this.activePinBtn && this.activePinBtn !== btn){
+                this.activePinBtn.classList.remove('active');
+            }
+            btn.classList.add('active');
             this.pinnedNode = node;
             this.activePinBtn = btn;
-            btn.classList.add('active');
-            btn.title = '取消固定';
-
-            this.syncPinnedContent();
-
-            this.pinnedObserver?.disconnect();
-            this.pinnedObserver = new MutationObserver(() => this.syncPinnedContent());
-            this.pinnedObserver.observe(node, { childList: true, subtree: true, characterData: true });
-
             this.pinnedPane.classList.remove('hidden');
+            
+            this.shiftPageMsgCon(this.pinnedPane.getBoundingClientRect().width);
+            this.syncGeneratingPinnedContent();
+
+            this.pinnedObserver?.disconnect() // 断开旧监听
+            this.pinnedObserver = new MutationObserver(() => this.syncGeneratingPinnedContent());
+            this.pinnedObserver.observe(node, { 
+                childList: true, subtree: true, characterData: true 
+            });
         },
 
-        syncPinnedContent(){
+        syncGeneratingPinnedContent(){
             if (!this.pinnedNode) return;
-            const clone = this.pinnedNode.cloneNode(true);
-            clone.querySelectorAll('[data-ext-ai-msg]')
-                .forEach(el => el.removeAttribute('data-ext-ai-msg'));
+            // 固定消息需要删除pinbtn，克隆是为了   不删除原节点上的btn
+            const clone = this.pinnedNode.cloneNode(true); 
+            clone.querySelector('.aiMsg-btn')?.remove(); 
             this.pinnedContentEl.innerHTML = clone.innerHTML;
         },
 
-        unpinAiMessage(){
-            if (this.activePinBtn) {
-                this.activePinBtn.classList.remove('active');
-                this.activePinBtn.title = '固定这条回答';
-            }
-            this.pinnedNode = null;
-            this.activePinBtn = null;
-            this.pinnedObserver?.disconnect();
-            this.pinnedPane.classList.add('hidden');
-            this.pinnedContentEl.innerHTML = '';
-        },
+        async setPageObservers(){
+            this.pageMsgCon = await this.getPageMsgCon(); // 每个对话都是新msgCon，需要重新获取
+            this.pageMsgCon.appendChild(this.pinnedPane)
+            this.setPinnedPanePosition(this.pageMsgCon);
 
-        async initPageMsgConObs(){
+            this.pageMsgConResizeObs?.disconnect();
+            this.pageMsgConResizeObs = new ResizeObserver(
+                () => this.setPinnedPanePosition(this.pageMsgCon)
+            )
+            this.pageMsgConResizeObs.observe(this.pageMsgCon); // 监听消息容器尺寸变化，调整固定面板位置
+
+            this.syncAllMsgs();
             this.pageMsgConObs?.disconnect();
-            this.panelMsgCon.innerHTML = '';
-            this.pageMsgCon = await this.getPageMsgCon();
-            this.updatePinnedPanePosition();
-
-            this.pageMsgConObs = new MutationObserver((mutations) => { 
+            this.pageMsgConObs = new MutationObserver((mutations) => { // 解决编辑旧消息情况最简洁的办法就是重新获取所有消息节点
                 mutations.forEach(mutation => {
                     mutation.addedNodes.forEach(node => {
-                        if (node.nodeType !== 1) return;
-
-                        const childUserMsg = node.querySelector(this.platform[selector.userMsg]);
-                        if (childUserMsg) {
-                            const msgs = this.pageMsgCon.querySelectorAll(this.platform[selector.userMsg]);
-                            if (msgs?.length > 0) {
-                                this.panelMsgCon.innerHTML = '';
-                                this.addNodesToPanel(msgs); // 面对新增和编辑消息最简洁的方法就是重新获取所有消息节点
-                                // pinBtn是挂载body上而不是ai消息上的，所以需要清理因为编辑消息遗留的pinBtn
-                                // claude是先添加节点再删除旧节点，根据函数逻辑需要等删除旧节点之后执行
-                                setTimeout(() => this.cleanOrphanPinBtns(), 500) 
-                            }
+                        if (node.nodeType !== 1) 
+                            return;
+                        
+                        if (node.querySelector?.(this.platform[selector.userMsg]) ||
+                            node.matches?.(this.platform[selector.userMsg])) {
+                            this.addUserMsgsToPanel(this.getUserMsgs());
                         }
 
-                        const childAiMsg = node.querySelector(this.platform[selector.aiMsg]);
-                        if (childAiMsg || node.matches?.(this.platform[selector.aiMsg])) {
-                            setTimeout(() => this.addPinBtnsToAiMsgs(), 300);
+                        const aiMsg = node.matches?.(this.platform[selector.aiMsg])
+                                        ?node
+                                        :node.querySelector(this.platform[selector.aiMsg]);
+                        if (aiMsg) {
+                            setTimeout(() => this.addPinBtnOnAiMsg(aiMsg), 300); 
                         }
+
                     })
+
+                    if (this.pinnedNode && !document.contains(this.pinnedNode)) {
+                        // 如果固定的消息节点被删除了，就取消固定
+                        this.unpinAiMessage(this.activePinBtn);
+                    }
                 })
             })
             this.pageMsgConObs.observe(this.pageMsgCon, { childList: true, subtree: true })
+        },
 
-            this.addPinBtnsToAiMsgs();
+        syncAllMsgs(){ 
+            const userMsgs = this.getUserMsgs();
+            if (userMsgs.length > 0) this.addUserMsgsToPanel(userMsgs);
+            this.getAiMsgs().forEach(node=>this.addPinBtnOnAiMsg(node));
+        },
+
+        getUserMsgs(){
+            return this.pageMsgCon?.querySelectorAll(this.platform[selector.userMsg]) || [];
+        },
+
+        getAiMsgs(){
+            return this.pageMsgCon?.querySelectorAll(this.platform[selector.aiMsg]) || [];
         },
 
         getPageMsgCon(){
             return new Promise((resolve) => {
                 const bodyObs = new MutationObserver(() => {
                     const pageMsgCon = document.querySelector(this.platform[selector.msgCon]);
-                    const pageMsgs = pageMsgCon?.querySelectorAll(this.platform[selector.userMsg]);
-                    if (pageMsgs?.length > 0) {
-                        this.addNodesToPanel(pageMsgs);
+                    if (pageMsgCon){
                         bodyObs.disconnect();
                         resolve(pageMsgCon);
                     }
@@ -375,7 +258,8 @@
                 bodyObs.observe(document.body, { childList: true, subtree: true })
             })
         },
-
+// ------------------历史消息面板逻辑------------------
+        
         creatPanel(){
             this.root = document.createElement('div');
             this.root.className = 'AI-user-message-history-ext-root';
@@ -390,6 +274,7 @@
             const headerTitle = document.createElement('span');
             headerTitle.textContent = '提问历史';
             header.appendChild(headerTitle);
+            this.panelHeaderTitle = headerTitle; // 存引用
 
             this.panelBtn = document.createElement('button');
             this.panelBtn.className = 'panel-btn';
@@ -434,7 +319,7 @@
         handlePanelBtnEvets(){
             let btnIsMoving = false;
             let offsetX, offsetY;
-            const self = this;
+            const self = this; // 不保存this引用会导致指向错误，保存this指向ext
 
             this.panelBtn.addEventListener('click', openPanel);
             function openPanel(){
@@ -471,8 +356,10 @@
                     window.innerHeight - self.panelBtn.offsetHeight,
                     e.clientY - offsetY));
 
-                self.root.style.setProperty('--panel-btn-left', `${newLeft}px`);
-                self.root.style.setProperty('--panel-btn-top', `${newTop}px`);
+                const leftVW = (newLeft / window.innerWidth * 100) + 'vw';
+                const topVH = (newTop / window.innerHeight * 100) + 'vh';
+                self.root.style.setProperty('--panel-btn-left', leftVW);
+                self.root.style.setProperty('--panel-btn-top', topVH);
             }
 
             function removeMovingEvent(){
@@ -485,7 +372,7 @@
             function savePanelBtnPos(){
                 const left = self.root.style.getPropertyValue('--panel-btn-left');
                 const top = self.root.style.getPropertyValue('--panel-btn-top');
-                if (!left.includes('NaN') && !top.includes('NaN')) {
+                if (left && top) {
                     chrome.storage.local.set({ panelBtnLeft: left, panelBtnTop: top });
                 }
             }
@@ -493,15 +380,14 @@
 
         setPanelBtnPos(){
             chrome.storage.local.get(['panelBtnLeft', 'panelBtnTop'], result => {
-                const left = parseFloat(result.panelBtnLeft);
-                const top = parseFloat(result.panelBtnTop);
-                if (!isNaN(left) && !isNaN(top)) {
-                    this.root.style.setProperty('--panel-btn-left', result.panelBtnLeft);
-                    this.root.style.setProperty('--panel-btn-top', result.panelBtnTop);
-                } else {
-                    chrome.storage.local.remove(['panelBtnLeft', 'panelBtnTop']);
+                const left = result.panelBtnLeft;
+                const top = result.panelBtnTop;
+                if ((left?.includes('vw') || left?.includes('%')) && 
+                    (top?.includes('vh') || top?.includes('%'))) {
+                    this.root.style.setProperty('--panel-btn-left', left);
+                    this.root.style.setProperty('--panel-btn-top', top);
                 }
-            })
+            });
         },
 
         listenConvsationChange(){
@@ -512,20 +398,27 @@
                 if (titleNode.textContent !== curTitle
                     && titleNode.textContent !== 'ChatGPT') {
                     curTitle = titleNode.textContent;
-                    this.unpinAiMessage();
-                    this.initPageMsgConObs();
+                    this.unpinAiMessage(this.activePinBtn);
+                    this.setPageObservers();
                 }
             });
             titleObs.observe(titleNode, { childList: true, subtree: true, characterData: true });
         },
 
-        addNodesToPanel(nodes){
+        addUserMsgsToPanel(nodes){
+            this.panelMsgCon.innerHTML = '';
             const fragment = document.createDocumentFragment();
             nodes.forEach((node, i) => {
-                const msgEle = document.createElement('div');
+
+                const msgEle = document.createElement('button')
                 msgEle.className = 'message';
-                msgEle.textContent = node.textContent;
                 msgEle.dataset.index = i;
+
+                const text = document.createElement('span')
+                text.className = 'message-text';
+                text.textContent = node.textContent
+                                
+                msgEle.appendChild(text);
 
                 if (i === nodes.length - 1) msgEle.classList.add('active');
 
@@ -538,11 +431,15 @@
                         ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 })
                 fragment.appendChild(msgEle);
+
+                
             })
             this.panelMsgCon.appendChild(fragment);
             this.scrollMsgConToBottom();
+            this.panelHeaderTitle.textContent = `提问历史 (${nodes.length})`;
         },
     }
 
     ext.init();
+
 })();
